@@ -56,7 +56,16 @@ function CameraRenderer({ onImage }: Props) {
   };
 
   return (
-    <>
+    <View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        zIndex: 1000,
+        width: Dimensions.get("screen").width,
+        height: Dimensions.get("screen").height,
+      }}
+    >
       <SafeAreaView
         style={{
           zIndex: 1,
@@ -122,7 +131,7 @@ function CameraRenderer({ onImage }: Props) {
         }}
         type={type}
       />
-    </>
+    </View>
   );
 }
 

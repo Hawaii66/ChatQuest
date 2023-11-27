@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -6,39 +6,51 @@ import {
   Dimensions,
   TextInput,
   KeyboardAvoidingView,
-  TouchableWithoutFeedback,
   Keyboard,
   TouchableOpacity,
   Image,
   ScrollView,
 } from "react-native";
 import Separator from "./Separator";
-import { Camera, ChevronLeft, SendHorizontal } from "lucide-react-native";
+import { Camera, ChevronLeft, Menu, SendHorizontal } from "lucide-react-native";
 import ChatMessage from "./ChatMessage";
 import InputNotice from "./InputNotice";
-import { Conductor } from "../Interfaces/Conductor";
+import { CameraContext } from "../Context/CameraContext";
+import { MenuContext } from "../Context/MenuContext";
 
 type Props = {
-  onOpenCamera: () => void;
-  imageUri: string;
-  text: string;
-  setText: (text: string) => void;
-  onSend: () => void;
-  onBack: () => void;
-  conductor: Conductor;
+  conductor:
+    | {
+        type: "waiting";
+        text: string;
+        expected: {
+          minute: number;
+          hour: number;
+        };
+      }
+    | {
+        type: "arrived";
+        text: string;
+      };
+  quest?: {
+    text: string;
+    uri: string;
+  };
+  response?: {
+    text: string;
+  };
+  sendQuest: (info: Required<Props["quest"]>) => void;
 };
 
-function ConductorChat({
-  imageUri,
-  onOpenCamera,
-  onSend,
-  setText,
-  text,
-  onBack,
-  conductor,
-}: Props) {
+function ConductorChat({ conductor, quest, response, sendQuest }: Props) {
   const [animationCount, setAnimationCount] = useState(0);
-  const [imageFullScreen, setImageFullScreen] = useState(true);
+  const [imageFullScreen, setImageFullScreen] = useState(false);
+
+  const [sendText, setSendText] = useState("");
+  const [sendImage, setSendImage] = useState("");
+
+  const camera = useContext(CameraContext);
+  const menu = useContext(MenuContext);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -58,7 +70,7 @@ function ConductorChat({
         display: "flex",
       }}
     >
-      {imageFullScreen && conductor.type === "arrived" && conductor.sent && (
+      {imageFullScreen && quest && quest.uri !== "" && (
         <TouchableOpacity
           style={{
             zIndex: 200,
@@ -90,7 +102,7 @@ function ConductorChat({
               zIndex: 300,
               borderRadius: 15,
             }}
-            source={{ uri: conductor.sent.uri }}
+            source={{ uri: quest.uri }}
           />
         </TouchableOpacity>
       )}
@@ -122,16 +134,16 @@ function ConductorChat({
               style={{
                 aspectRatio: 1,
                 backgroundColor: "gray",
-                padding: 5,
+                padding: 7,
                 borderRadius: 1000,
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
               }}
-              onPress={onBack}
+              onPress={() => menu?.openMenu()}
             >
-              <ChevronLeft
-                size={Dimensions.get("screen").width * 0.08}
+              <Menu
+                size={Dimensions.get("screen").width * 0.07}
                 color="white"
               />
             </TouchableOpacity>
@@ -179,7 +191,7 @@ function ConductorChat({
                 <Text>
                   {conductor.type === "waiting"
                     ? "The Conductor is typing"
-                    : conductor.sent
+                    : quest
                     ? ""
                     : "Complete the quest"}
                 </Text>
@@ -192,42 +204,42 @@ function ConductorChat({
                   </Text>
                 )}
               </ChatMessage>
-              {conductor.type === "arrived" && conductor.sent && (
-                <ChatMessage text={conductor.sent.text} side="left">
-                  <TouchableOpacity
-                    style={{
-                      padding: 5,
-                      shadowColor: "#000",
-                      shadowOffset: {
-                        height: 2,
-                        width: 2,
-                      },
-                      shadowOpacity: 0.6,
-                      shadowRadius: 4,
-                    }}
-                    onPress={() => setImageFullScreen(true)}
-                  >
-                    <Image
-                      source={{
-                        uri: conductor.sent.uri,
-                      }}
+              {quest && (
+                <ChatMessage text={quest.text} side="left">
+                  {quest.uri !== "" && (
+                    <TouchableOpacity
                       style={{
-                        width: "70%",
-                        aspectRatio: 9 / 16,
-                        borderRadius: 10,
+                        padding: 5,
+                        shadowColor: "#000",
+                        shadowOffset: {
+                          height: 2,
+                          width: 2,
+                        },
+                        shadowOpacity: 0.6,
+                        shadowRadius: 4,
                       }}
-                    />
-                  </TouchableOpacity>
+                      onPress={() => setImageFullScreen(true)}
+                    >
+                      <Image
+                        source={{
+                          uri: quest.uri,
+                        }}
+                        style={{
+                          width: "70%",
+                          aspectRatio: 9 / 16,
+                          borderRadius: 10,
+                        }}
+                      />
+                    </TouchableOpacity>
+                  )}
                 </ChatMessage>
               )}
-              {conductor.type === "arrived" && conductor.response && (
-                <ChatMessage side="right" text={conductor.response} />
-              )}
+              {response && <ChatMessage side="right" text={response.text} />}
             </ScrollView>
             <Separator />
             {conductor.type === "waiting" ? (
               <InputNotice text="Waiting for message" />
-            ) : conductor.sent ? (
+            ) : quest ? (
               <InputNotice text="Quest completed" />
             ) : (
               <View
@@ -241,9 +253,11 @@ function ConductorChat({
                   gap: 4,
                 }}
               >
-                {imageUri === "" ? (
+                {sendImage === "" ? (
                   <TouchableOpacity
-                    onPress={onOpenCamera}
+                    onPress={() => {
+                      camera?.openCamera(setSendImage);
+                    }}
                     style={{
                       padding: 5,
                       borderRadius: 1000,
@@ -255,7 +269,7 @@ function ConductorChat({
                   </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
-                    onPress={onOpenCamera}
+                    onPress={() => {}}
                     style={{
                       width: Dimensions.get("screen").width * 0.15,
                       aspectRatio: 9 / 16,
@@ -263,7 +277,7 @@ function ConductorChat({
                   >
                     <Image
                       source={{
-                        uri: imageUri,
+                        uri: sendImage,
                       }}
                       style={{
                         flex: 1,
@@ -291,21 +305,24 @@ function ConductorChat({
                     placeholder="explain"
                     placeholderTextColor={"#ffffffAA"}
                     multiline
-                    value={text}
-                    onChangeText={setText}
+                    value={sendText}
+                    onChangeText={setSendText}
                     contextMenuHidden
                   />
                 </View>
                 <TouchableOpacity
                   onPress={() => {
                     Keyboard.dismiss();
-                    onSend();
+                    sendQuest({
+                      text: sendText,
+                      uri: sendImage,
+                    });
                   }}
                   style={{ width: 36, aspectRatio: 1 }}
                 >
                   <SendHorizontal
                     color={
-                      text !== "" && imageUri !== "" ? "lightblue" : "gray"
+                      sendText !== "" && sendImage !== "" ? "lightblue" : "gray"
                     }
                     size={36}
                   />
