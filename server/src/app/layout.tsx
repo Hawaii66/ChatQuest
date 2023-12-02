@@ -13,7 +13,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  console.log("WHat123");
   return (
     <ClerkProvider>
       <html lang="en">

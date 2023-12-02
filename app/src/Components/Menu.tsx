@@ -10,8 +10,13 @@ import { MenuContext } from "../Context/MenuContext";
 import Separator from "./Separator";
 import MenuButton from "./MenuButton";
 import { Globe2, MessageCircle, Settings, User } from "lucide-react-native";
+import { Page } from "../Interfaces/Pages";
 
-function Menu() {
+type Props = {
+  changePage: (page: Page) => void;
+};
+
+function Menu({ changePage }: Props) {
   const menu = useContext(MenuContext);
 
   return (
@@ -39,7 +44,7 @@ function Menu() {
       </TouchableWithoutFeedback>
       <View
         style={{
-          width: "60%",
+          width: "70%",
           height: "100%",
           backgroundColor: "white",
         }}
@@ -66,11 +71,27 @@ function Menu() {
             ChatQuest
           </Text>
           <Separator />
-          <MenuButton icon={<MessageCircle color="gray" />} text="Chat" />
-          <MenuButton icon={<Globe2 color="gray" />} text="Friends" />
+          <MenuButton
+            onClick={() => changePage("Chat")}
+            icon={<MessageCircle color="gray" />}
+            text="Chat"
+          />
+          <MenuButton
+            onClick={() => changePage("Friends")}
+            icon={<Globe2 color="gray" />}
+            text="Friends"
+          />
           <View style={{ flexGrow: 1 }} />
-          <MenuButton icon={<User color="gray" />} text="User" />
-          <MenuButton icon={<Settings color="gray" />} text="Settings" />
+          <MenuButton
+            onClick={() => changePage("User")}
+            icon={<User color="gray" />}
+            text="User"
+          />
+          <MenuButton
+            onClick={() => changePage("Settings")}
+            icon={<Settings color="gray" />}
+            text="Settings"
+          />
         </SafeAreaView>
       </View>
     </View>

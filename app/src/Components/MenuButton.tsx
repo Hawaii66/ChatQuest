@@ -19,6 +19,7 @@ function MenuButton({ icon, text, onClick }: Props) {
         alignItems: "center",
         gap: 12,
         paddingHorizontal: 8,
+        marginVertical: 4,
       }}
     >
       {icon}
